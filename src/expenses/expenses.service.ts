@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { CreateExpenseDto } from './dto/create-expense.dto.js';
 import {
   assertMemberOfWallet,
+  assertWalletOpen,
   expenseSelect,
+  isMemberOfWallet,
   toExpenseItem,
 } from './expenses.helpers.js';
 
@@ -34,13 +37,48 @@ export class ExpensesService {
     };
   }
 
-  // TODO étape 2 : écrivez  async create(walletId: string, userId: string, dto: CreateExpenseDto)
-  //   1. accès + porte-monnaie ouvert (assertMemberOfWallet, assertWalletOpen)
-  //   2. dépenseur = dto.paidById ?? userId ; s'il est différent de userId,
-  //      il doit être membre (isMemberOfWallet), sinon ForbiddenException
-  //   3. this.prisma.expense.create({ data: {..., createdById: userId}, select: expenseSelect })
-  //   4. mettre à jour wallet.updatedAt (règle métier : chaque action rafraîchit updatedAt)
-  //   5. renvoyer toExpenseItem(...)
+  async create(walletId: string, userId: string, dto: CreateExpenseDto) {
+    // 1. L'utilisateur est membre (404 / 403) et le porte-monnaie est ouvert (409)
+    const wallet = await assertMemberOfWallet(this.prisma, walletId, userId);
+    assertWalletOpen(wallet);
+
+    // 2. Le dépenseur : celui indiqué, sinon l'utilisateur connecté
+    const paidById = dto.paidById ?? userId;
+    if (paidById !== userId) {
+      const payerIsMember = await isMemberOfWallet(
+        this.prisma,
+        walletId,
+        paidById,
+      );
+      if (!payerIsMember) {
+        throw new ForbiddenException(
+          'Le dépenseur doit être membre du porte-monnaie.',
+        );
+      }
+    }
+
+    // 3. Création : le créateur est TOUJOURS l'utilisateur connecté
+    const expense = await this.prisma.expense.create({
+      data: {
+        walletId,
+        title: dto.title,
+        amount: dto.amount,
+        date: new Date(dto.date),
+        paidById,
+        createdById: userId,
+      },
+      select: expenseSelect,
+    });
+
+    // 4. Règle métier : chaque action rafraîchit updatedAt
+    await this.prisma.wallet.update({
+      where: { id: walletId },
+      data: { updatedAt: new Date() },
+    });
+
+    // 5. Même format que dans la liste
+    return toExpenseItem(expense);
+  }
 
   // TODO étape 3 : écrivez  async remove(walletId: string, expenseId: string)
   //   (l'autorisation dépenseur/créateur est faite par ExpenseOwnerGuard, pas ici)
