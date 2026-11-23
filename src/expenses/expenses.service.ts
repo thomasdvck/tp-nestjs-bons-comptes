@@ -1,22 +1,38 @@
 import { Injectable } from '@nestjs/common';
-// TODO étape 1 : importez PrismaService (../prisma/prisma.service.js) pour l'injecter.
-// Rappel : en ESM, les imports locaux doivent se terminer par « .js ».
-
-// Fonctions fournies (voir expenses.helpers.ts) :
-//   expenseSelect, toExpenseItem, assertMemberOfWallet, assertWalletOpen, isMemberOfWallet
-// import { ... } from './expenses.helpers.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  assertMemberOfWallet,
+  expenseSelect,
+  toExpenseItem,
+} from './expenses.helpers.js';
 
 @Injectable()
 export class ExpensesService {
-  // TODO étape 1 : ajoutez un constructeur qui reçoit PrismaService par injection
-  //   de dépendances (« private readonly prisma: PrismaService »).
+  constructor(private readonly prisma: PrismaService) {}
 
-  // TODO étape 1 : écrivez  async findAll(walletId: string, userId: string)
-  //   1. vérifier l'accès avec assertMemberOfWallet(this.prisma, walletId, userId)
-  //   2. lire les dépenses du porte-monnaie : this.prisma.expense.findMany(...)
-  //      (tri : date décroissante, puis id décroissant ; select: expenseSelect)
-  //   3. calculer le total : this.prisma.expense.aggregate({ _sum: { amount: true } })
-  //   4. renvoyer { items: [...toExpenseItem], totalAmount }  (0 si aucune dépense)
+  async findAll(walletId: string, userId: string) {
+    // 1. Vérifie que l'utilisateur est membre (lève 404 / 403 tout seul)
+    await assertMemberOfWallet(this.prisma, walletId, userId);
+
+    // 2. Les dépenses du porte-monnaie, de la plus récente à la plus ancienne
+    const expenses = await this.prisma.expense.findMany({
+      where: { walletId },
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      select: expenseSelect,
+    });
+
+    // 3. Le total en centimes
+    const aggregate = await this.prisma.expense.aggregate({
+      where: { walletId },
+      _sum: { amount: true },
+    });
+
+    // 4. La réponse (0 et non null s'il n'y a aucune dépense)
+    return {
+      items: expenses.map(toExpenseItem),
+      totalAmount: aggregate._sum.amount ?? 0,
+    };
+  }
 
   // TODO étape 2 : écrivez  async create(walletId: string, userId: string, dto: CreateExpenseDto)
   //   1. accès + porte-monnaie ouvert (assertMemberOfWallet, assertWalletOpen)
