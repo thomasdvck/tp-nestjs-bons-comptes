@@ -1,0 +1,67 @@
+{
+  "name": "tp-nestjs-bons-comptes",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "TP NestJS - Les bons comptes (M2 MIAGE, Université de Lille)",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "lint": "oxlint src/ test/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:etape1": "vitest run test/etape-1.spec.ts",
+    "test:etape2": "vitest run test/etape-2.spec.ts",
+    "test:etape3": "vitest run test/etape-3.spec.ts",
+    "test:etapes": "vitest run test/etape-",
+    "test:bonus": "vitest run test/bonus.spec.ts",
+    "rattrapage": "node scripts/rattrapage.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/config": "^12.0.1",
+    "@nestjs/core": "^12.0.1",
+    "@nestjs/jwt": "^12.0.3",
+    "@nestjs/passport": "^12.0.0",
+    "@nestjs/platform-express": "^12.0.1",
+    "@nestjs/swagger": "^12.1.0",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^3.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "cookie-parser": "^1.4.7",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.12",
+    "@nestjs/schematics": "^12.0.0",
+    "@nestjs/testing": "^12.0.1",
+    "@swc/core": "^1.16.18",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.0.0",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/supertest": "^7.0.0",
+    "oxlint": "^1.58.0",
+    "prettier": "^3.4.2",
+    "prisma": "^5.22.0",
+    "supertest": "^7.0.0",
+    "typescript": "^6.0.2",
+    "unplugin-swc": "^2.0.0",
+    "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "multer": "^2.5.0"
+  }
+}

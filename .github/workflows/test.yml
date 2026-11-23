@@ -1,0 +1,28 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Compilation
+        run: npm run build
+      # Sur le dépôt de départ, les tests des étapes échouent volontairement :
+      # c'est à vous de les faire passer. Le badge rouge est donc normal au début.
+      - name: Tests des étapes 1 à 3
+        run: npm run test:etapes
+        continue-on-error: true
+      - name: Tests du bonus (clôture)
+        run: npm run test:bonus
+        continue-on-error: true
+      - name: Tests du reste de l'application
+        run: npx vitest run src
